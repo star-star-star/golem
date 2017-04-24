@@ -36,6 +36,7 @@ class IncomesKeeper(object):
                 expected_income.delete_instance()
 
     def received(self, sender_node_id, task_id, subtask_id, transaction_id, value):
+        # FIXME: Czy jest możliwe, że ta sama płatność będzie zaliczona do róznych subtasków?
         try:
             with db.transaction():
                 return Income.create(sender_node=sender_node_id, task=task_id, subtask=subtask_id, transaction=transaction_id, value=value)

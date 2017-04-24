@@ -163,6 +163,9 @@ class ExpectedIncome(BaseModel):
     subtask = CharField()
     value = BigIntegerField()
 
+    class Meta:
+        database = db
+        primary_key = CompositeKey('sender_node', 'subtask')
 
 class Income(BaseModel):
     """Payments received from other nodes."""
