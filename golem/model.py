@@ -45,8 +45,18 @@ class Database:
 
     @staticmethod
     def create_database():
-        tables = [LocalRank, GlobalRank, NeighbourLocRank, Payment, ReceivedPayment, KnownHosts, Account,
-                  Stats]
+        tables = [
+            Account,
+            ExpectedIncome,
+            GlobalRank,
+            Income,
+            KnownHosts,
+            LocalRank,
+            NeighbourLocRank,
+            Payment,
+            ReceivedPayment,
+            Stats,
+        ]
         version = Database._get_user_version()
         if version != Database.SCHEMA_VERSION:
             log.info("New database version {}, previous {}".format(Database.SCHEMA_VERSION, version))
@@ -145,6 +155,26 @@ class Payment(BaseModel):
     def __repr__(self):
         tx = self.details.get('tx', 'NULL')
         return "<Payment stid: %r v: %.3f s: %r tx: %s>" % (self.subtask, self.value/denoms.ether, self.status, tx)
+
+
+class ExpectedIncome(BaseModel):
+    sender_node = CharField()
+    task = CharField()
+    subtask = CharField()
+    value = BigIntegerField()
+
+
+class Income(BaseModel):
+    """Payments received from other nodes."""
+    sender_node = CharField()
+    task = CharField()
+    subtask = CharField()
+    transaction = CharField()
+    value = BigIntegerField()
+
+    class Meta:
+        database = db
+        primary_key = CompositeKey('sender_node', 'subtask')
 
 class ReceivedPayment(BaseModel):
     """ Represent payments that nodes on this machine receive from other nodes
