@@ -5,7 +5,6 @@ from ethereum import keys
 
 from golem.ethereum import Client
 from golem.ethereum.paymentprocessor import PaymentProcessor
-from golem.ethereum.paymentmonitor import PaymentMonitor
 from golem.transactions.transactionsystem import TransactionSystem
 
 log = logging.getLogger('golem.pay')
@@ -30,15 +29,10 @@ class EthereumTransactionSystem(TransactionSystem):
         self.__eth_node = Client()
         self.__proc = PaymentProcessor(self.__eth_node, node_priv_key, faucet=True)
         self.__proc.start()
-        self.__monitor = PaymentMonitor(self.__eth_node, self.__node_address)
-        self.__monitor.start()
-        # TODO: We can keep address in PaymentMonitor only
 
     def stop(self):
         if self.__proc.running:
             self.__proc.stop()
-        if self.__monitor.running:
-            self.__monitor.stop()
         if self.__eth_node.node is not None:
             self.__eth_node.node.stop()
 
