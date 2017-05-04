@@ -326,7 +326,7 @@ class TaskServer(PendingConnectionsServer):
         if node_id is None:
             logger.warning("Unknown node try to make a payment for task {}".format(task_id))
             return
-        #transaction = self.client #XXX
+        # FIXME:
         # check if this is my addr
         # check if tx already burned for another task
         self.client.transaction_system.incomes_keeper.received(
@@ -799,19 +799,22 @@ class TaskServer(PendingConnectionsServer):
         self.remove_responses(ans_conn_id)
 
     def connection_for_payment_established(self, session, conn_id, key_id, obj):
-        logger.debug('connection_for_payment_established()')
-        self.task_sessions[subtask_id] = session
-        payment = Payment.objects.get(subtask=subtask_id)
+        logger.debug('connection_for_payment_established(%r)', obj)
+        self.task_sessions[obj.subtask_id] = session
+        payment = Payment.objects.get(subtask=obj.subtask_id)
         session.send_hello()
-        session.inform_worker_about_payment(obj)
+        session.inform_worker_about_payment(payment)
 
     def connection_for_payment_request_established(self, session, conn_id, key_id, obj):
-        logger.debug('connection_for_payment_request_established()')
-        self.task_sessions[subtask_id] = session
-        expected_income = ExpectedIncome.objects.get(subtask=msg.subtask_id)
+        logger.debug('connection_for_payment_request_established(%r)', obj)
+        self.task_sessions[obj.subtask_id] = session
+        expected_income = ExpectedIncome.objects.get(subtask=obj.subtask_id)
         session.send_hello()
-        session.request_payment(obj)
+        session.request_payment(expected_income)
 
+
+    def noop(self, *args, **kwargs):
+        logger.debug('Noop(%r, %r)', args, kwargs)
 
     def noop(self, *args, **kwargs):
         logger.debug('Noop(%r, %r)', args, kwargs)

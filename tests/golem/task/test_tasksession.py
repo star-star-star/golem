@@ -1,5 +1,6 @@
 import cPickle
 import os
+import random
 import unittest
 import uuid
 
@@ -28,16 +29,37 @@ from golem.tools.assertlogs import LogTestCase
 class TestTaskSession(LogTestCase, TempDirFixture, PEP8MixIn):
     PEP8_FILES = ['golem/task/tasksession.py', ]
 
-    def test_init(self):
-        ts = TaskSession(Mock())
-        self.assertIsInstance(ts, TaskSession)
+    def setUp(self):
+        super(TestTaskSession, self).setUp()
+        random.seed()
+        self.task_session = TaskSession(Mock())
+
+    @patch('golem.task.tasksession.TaskSession.send')
+    def test_hello(self, send_mock):
+        self.task_session.conn.server.get_key_id.return_value = key_id = 'key id%d' % (random.random() * 1000, )
+        self.task_session.send_hello()
+        expected = {
+            u'CHALLENGE': None,
+            u'CLIENT_KEY_ID': key_id,
+            u'CLI_VER': 0,
+            u'DIFFICULTY': 0,
+            u'METADATA': None,
+            u'NODE_INFO': None,
+            u'NODE_NAME': None,
+            u'PORT': 0,
+            u'PROTO_ID': TASK_PROTOCOL_ID,
+            u'RAND_VAL': self.task_session.rand_val,
+            u'SOLVE_CHALLENGE': False,
+        }
+        msg = send_mock.call_args[0][0]
+        self.assertEquals(msg.dict_repr(), expected)
 
     def test_encrypt(self):
         ts = TaskSession(Mock())
         data = "ABC"
 
         ts.key_id = "123"
-        res = ts.encrypt(data)
+        ts.encrypt(data)
         ts.task_server.encrypt.assert_called_with(data, "123")
 
         ts.task_server = None
@@ -285,7 +307,6 @@ class TestTaskSession(LogTestCase, TempDirFixture, PEP8MixIn):
         ts.task_computer.session_closed.assert_called_with()
         assert conn.close.called
 
-
         # No source code in the local environment -> failure
         __reset_mocks()
         ctd = ComputeTaskDef()
@@ -475,7 +496,7 @@ class TestCreatePackage(unittest.TestCase):
         assert ts.task_server.retry_sending_task_result.called
 
     @patch('golem.task.tasksession.async_run', side_effect=executor_error)
-    def test_send_task_result_hash_recoverable_error(self, _):
+    def test_send_task_result_hash_unrecoverable_error(self, _):
 
         ts = self.ts
         ts._react_to_get_task_result(self.msg)

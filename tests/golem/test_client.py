@@ -2,7 +2,7 @@ import os
 import unittest
 import uuid
 
-from ethereum.utils import denoms
+from golem import testutils
 from golem.client import Client, ClientTaskComputerEventListener, log
 from golem.clientconfigdescriptor import ClientConfigDescriptor
 from golem.core.simpleserializer import DictSerializer
@@ -23,7 +23,8 @@ from mock import Mock, MagicMock, patch
 from twisted.internet.defer import Deferred
 
 
-class TestCreateClient(TestDirFixture):
+class TestCreateClient(TestDirFixture, testutils.PEP8MixIn):
+    PEP8_FILES = ['golem/client.py', ]
 
     @patch('twisted.internet.reactor', create=True)
     def test_config_override_valid(self, *_):
@@ -59,6 +60,35 @@ class TestClient(TestWithDatabase, TestWithReactor):
     def tearDownClass(cls):
         TestWithDatabase.tearDownClass()
         TestWithReactor.tearDownClass()
+
+    def test_get_payments(self):
+        with patch('golem.ethereum.node.NodeProcess.save_static_nodes'):
+            c = Client(datadir=self.path, transaction_system=True, connect_to_known_hosts=False,
+                       use_docker_machine_manager=False, use_monitor=False)
+
+        payments = [
+            Payment(subtask=uuid.uuid4(),
+                    status=PaymentStatus.awaiting,
+                    payee=uuid.uuid4(),
+                    value=2 * 10 ** 18)
+            for _ in xrange(2)
+        ]
+
+        db = Mock()
+        db.get_newest_payment.return_value = payments
+
+        c.transaction_system.payments_keeper.db = db
+        received_payments = c.get_payments_list()
+
+        self.assertEqual(len(received_payments), len(payments))
+
+        for i in xrange(len(payments)):
+            self.assertEqual(received_payments[i]['subtask'], payments[i].subtask)
+            self.assertEqual(received_payments[i]['status'], payments[i].status.value)
+            self.assertEqual(received_payments[i]['payee'], payments[i].payee)
+            self.assertEqual(received_payments[i]['value'], str(payments[i].value))
+
+        c.quit()
 
     @patch('golem.transactions.ethereum.ethereumtransactionsystem.EthereumTransactionSystem.sync')
     def test_sync(self, *_):
@@ -270,7 +300,7 @@ class TestClientRPCMethods(TestWithDatabase, LogTestCase, TestWithReactor):
 
     @patch('golem.network.p2p.node.Node.collect_network_info')
     @patch('golem.client.async_run')
-    def test_enqueue_new_task(self, async_run, *_):
+    def test_enqueue_new_task2(self, async_run, *_):
         c = self.client
 
         result = (None, None, None)

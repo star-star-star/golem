@@ -154,7 +154,7 @@ class Payment(BaseModel):
 
     def __repr__(self):
         tx = self.details.get('tx', 'NULL')
-        return "<Payment stid: %r v: %.3f s: %r tx: %s>" % (self.subtask, self.value/denoms.ether, self.status, tx)
+        return "<Payment stid: {!r} v: {.3f} s: {!r} tx: {!s}>" % (self.subtask, self.value / denoms.ether, self.status, tx)
 
 
 class ExpectedIncome(BaseModel):
@@ -176,6 +176,7 @@ class Income(BaseModel):
         database = db
         primary_key = CompositeKey('sender_node', 'subtask')
 
+
 class ReceivedPayment(BaseModel):
     """ Represent payments that nodes on this machine receive from other nodes
     """
@@ -190,13 +191,11 @@ class ReceivedPayment(BaseModel):
         database = db
         primary_key = CompositeKey('from_node_id', 'task')
 
-    class Meta:
-        database = db
-        primary_key = CompositeKey('sender_node', 'subtask')
 
 ##################
 # RANKING MODELS #
 ##################
+
 
 class LocalRank(BaseModel):
     """ Represent nodes experience with other nodes, number of positive and

@@ -48,6 +48,27 @@ class TransactionSystem(object):
         """
         return self.incomes_keeper.get_list_of_all_incomes()
 
+    def get_incoming_payments(self):
+        """Returns preprocessed list of pending & confirmed incomes.
+        It's optimised for electron GUI.
+        """
+        # TODO: Do sql join
+        # TODO: group by task? (sum(subtask payments))
+        expected = self.incomes_keeper.get_pending()
+        confirmed = self.incomes_keeper.get_confirmed()
+
+        def item(o):
+            d = {
+                'title': o.task,  # TODO try to get task name?
+                'time': o.created_date,
+                'status': getattr(o, 'transaction') and o.transaction or "Pending",
+                'amount': o.value,
+            }
+            return d
+
+        result = [item(o) for o in (expected + confirmed)]
+        return result
+
     def check_payments(self):
         # TODO Some code from taskkeeper
         # now = datetime.datetime.now()
